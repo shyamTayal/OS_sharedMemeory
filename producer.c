@@ -5,7 +5,7 @@
 #include <sys/shm.h>
 #include <sys/ipc.h>
 #include <unistd.h>
-
+#define BUFFERSIZE 4
 struct studentInfo
 {
     char name[100];
@@ -20,7 +20,7 @@ typedef struct
     int out;
     int prid;
     int cnid;
-    struct studentInfo buffer[10];
+    struct studentInfo buffer[BUFFERSIZE];
 } mydata;
 
 void my_handler() {}
@@ -70,7 +70,7 @@ int main()
         data->in = data->in + 1;
         kill(data->cnid, SIGUSR1);
         pause();
-    } while (1);
+    } while (i < BUFFERSIZE - 1);
 
     printf("Consumer Program Exting...\n");
 }

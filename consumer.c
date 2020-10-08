@@ -5,6 +5,10 @@
 #include <sys/shm.h>
 #include <sys/ipc.h>
 #include <unistd.h>
+#include <sys/types.h>
+#include <sys/stat.h>
+#include <fcntl.h>
+#define BUFFERSIZE 4
 
 struct studentInfo
 {
@@ -20,7 +24,7 @@ typedef struct
     int out;
     int prid;
     int cnid;
-    struct studentInfo buffer[10];
+    struct studentInfo buffer[BUFFERSIZE];
 } mydata;
 
 void my_handler() {}
@@ -59,14 +63,35 @@ int main()
     {
         pause();
         i = data->out;
-        printf("Enter Student Information :\n");
+        printf("** Student Information **\n");
         printf("Name : %s\n", (data->buffer[i]).name);
         printf("Roll Number : %s\n", (data->buffer[i]).roll);
         printf("Age : %d\n", (data->buffer[i]).age);
         printf("Section : %s\n", (data->buffer[i]).section);
         data->out = data->out + 1;
+
+        int fp;
+        fp = open("csv_consumer.csv", O_CREAT | O_WRONLY, 0641);
+        if (fp == -1)
+        {
+            perror("DESTINATION FILE ERROR");
+            exit(0);
+        }
+        int size = lseek(fp, 0, SEEK_END);
+        if (size == 0)
+        {
+            write(fp, "Name,Roll number,Age,Section", 28);
+            close(fp);
+        }
+        fp = open("csv_consumer.csv", O_WRONLY | O_APPEND, 0641);
+        char *buff = (char *)malloc(50 * sizeof(char));
+        sprintf(buff, "\n%s,%s,%d,%s", (data->buffer[i]).name, (data->buffer[i]).roll, (data->buffer[i]).age, (data->buffer[i]).section);
+        int i;
+        for (i = 0; buff[i] != '\0'; i++){}
+        write(fp, buff, i);
+        close(fp);
         kill(data->prid, SIGUSR1);
-    } while (1);
+    } while (i < BUFFERSIZE - 1);
 
     printf("Consumer Program Exting...\n");
 }
